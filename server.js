@@ -50,6 +50,52 @@ app.get('/tarefas/:id', (req, res) => {
     res.json(tarefa);
 });
 
+app.put('/tarefas/:id', (req, res) => {
+    const {id} = req.params;
+    const {titulo, descricao, concluida} = req.body;
+    const tarefa = db.prepare('SELECT * FROM tarefas WHERE id = ?').get(id);
+
+    //fazer um if para verificar se a tarefa existe
+    if(!tarefa){
+        return res.status(404).json({erro: 'Tarefa não encontrada'});
+    }
+
+    //fazer um if para verificar se tem titulo
+    if (!titulo || titulo.trim() === '')
+    {
+        return res.status(400).json({erro: 'O campo titulo é obrigatório'}); //resposta se erro
+    }
+
+    //verifica se o campo é definido e se é um booleano. o definido é pq ele nao precisa passar, mas se passar tem que ser booleano
+    if (concluida !== undefined && typeof concluida !== 'boolean')
+    {
+        return res.status(400).json({erro: 'O campo concluida deve ser um valor booleano'});
+    }
+
+    //o professor vem separando em linhas, o .run poderia estar na mesma linha, mas fiz como ele nesse, diferente dos anteriores.
+    db.prepare('UPDATE tarefas SET titulo = ?, descricao = ?, concluida = ? WHERE id = ?')
+    .run(titulo, descricao ?? null, concluida ? 1 : 0, id); // o ternario da concluida ta falando: "se tiver 1, beleza, se nao coloca um 0"
+
+    //utiliza-se a quebra de linha para ficar mais legivel o codigo, tem que quebrar antes do ponto, e somente uma linha para nao quebrar a sintaxe
+    const tarefaAtualizada = db
+    .prepare('SELECT * FROM tarefas WHERE id = ?')
+    .get(id);
+
+    res.json(tarefaAtualizada);
+});
+
+app.delete('/tarefas/:id', (req, res) => {
+    const {id} = req.params;
+    const tarefa = db.prepare('SELECT * FROM tarefas WHERE id = ?')
+    .get(id);
+
+    const resultado = db
+    .prepare('DELETE FROM tarefas WHERE id = ?')
+    .run(id);
+
+    res.json({mensagem: 'Tarefa excluída com sucesso!'});
+});
+
 app.listen(3333, () => {
     console.log('Servidor rodando na porta 3333'); //apenas informativo, nao é necessario ter esse console.log
 });
