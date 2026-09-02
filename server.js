@@ -89,6 +89,10 @@ app.delete('/tarefas/:id', (req, res) => {
     const tarefa = db.prepare('SELECT * FROM tarefas WHERE id = ?')
     .get(id);
 
+    if(!tarefa){
+        return res.status(404).json({erro: 'Tarefa não encontrada'});
+    }
+
     const resultado = db
     .prepare('DELETE FROM tarefas WHERE id = ?')
     .run(id);
